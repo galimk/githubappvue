@@ -11,7 +11,14 @@ export default new Router({
     {
       path: '/',
       name: 'Home',
-      component: {template: `<span></span>`}
+      component: {template: `<span></span>`},
+      beforeEnter: (to, from, next) => {
+        if (window.localStorage.getItem('accessToken')) {
+          next('/dashboard')
+        } else {
+          next()
+        }
+      }
     },
     {
       path: '/dashboard',
@@ -26,8 +33,8 @@ export default new Router({
       }
     },
     {
-      path: '/dashboard/:repo_name',
-      name: 'DashboardWithRepo',
+      path: '/dashboard/:org_name',
+      name: 'DashboardWithOrgName',
       component: Dashboard,
       beforeEnter: (to, from, next) => {
         if (!window.localStorage.getItem('accessToken')) {

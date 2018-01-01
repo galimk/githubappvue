@@ -1,4 +1,5 @@
 import request from 'superagent'
+import router from '../router'
 
 const state = {
   authContext: {
@@ -75,6 +76,19 @@ const actions = {
       })
     })
   },
+  getRepoDetails ({commit}, repoInfo) {
+    request.get(`${GithubBaseUri}repos/${repoInfo.ownerName}/${repoInfo.repoName}`).end((err, res) => {
+      if (!err) {
+        commit('get_repo_success', JSON.parse(res.text))
+      }
+    })
+
+    request.get(`${GithubBaseUri}repos/${repoInfo.ownerName}/${repoInfo.repoName}/stargazers`).end((err, res) => {
+      if (!err) {
+        commit('get_stargazers_success', JSON.parse(res.text))
+      }
+    })
+  },
   loadOrgs ({commit, state}) {
     fetchGitHubData('organizations', state.orgs.lastSeenId, commit, 'load_orgs', false)
   },
@@ -89,7 +103,29 @@ const actions = {
   },
   logOut ({commit}) {
     commit('log_out')
+  },
+  searchOrg ({commit, state}, orgName) {
+    if (state.selectedOrg === orgName) {
+      return
+    }
+
+    request.get(`${GithubBaseUri}orgs/${orgName}`).end((err, res) => {
+      if (!err) {
+        router.push({name: 'DashboardWithOrgName', params: {org_name: orgName}})
+      } else {
+        commit('organization_not_found')
+      }
+    })
   }
+}
+
+const switchOrg = (state, org) => {
+  state.repos.items = []
+  state.repos.lastPage = 1
+  state.members.items = []
+  state.members.lastPage = 1
+  state.selectedOrg = org
+  state.orgSearchInvalid = false
 }
 
 const mutations = {
@@ -99,11 +135,7 @@ const mutations = {
   },
 
   switch_org (state, org) {
-    state.repos.items = []
-    state.repos.lastPage = 1
-    state.members.items = []
-    state.members.lastPage = 1
-    state.selectedOrg = org
+    switchOrg(state, org)
   },
 
   set_user (state, user) {
@@ -131,37 +163,44 @@ const mutations = {
     state.orgs.loading = false
   },
 
+  organization_found (state, org) {
+    switchOrg(state, org)
+  },
+
+  organization_not_found (state) {
+    state.orgSearchInvalid = true
+  },
+
   load_repos_success (state, data) {
     for (let item of data) {
       state.repos.items.push(item)
     }
-    state.repos.lastPage = data.length == 30 ? state.repos.lastPage + 1 : null;
+    state.repos.lastPage = data.length === 30 ? state.repos.lastPage + 1 : null
     state.repos.loading = false
   },
-
 
   load_members_success (state, data) {
     for (let item of data) {
       state.members.items.push(item)
     }
-    state.members.lastPage = data.length == 30 ? state.members.lastPage + 1 : null;
+    state.members.lastPage = data.length === 30 ? state.members.lastPage + 1 : null
     state.members.loading = false
   },
 
   load_repos_failure () {
-    state.repos.loading = false;
+    state.repos.loading = false
   },
 
   load_members_failure () {
-    state.members.loading = false;
+    state.members.loading = false
   },
 
   load_repos_init () {
-    state.repos.loading = true;
+    state.repos.loading = true
   },
 
   load_members_init () {
-    state.members.loading = true;
+    state.members.loading = true
   },
 
   load_orgs_failure () {
@@ -170,6 +209,14 @@ const mutations = {
 
   load_orgs_init () {
     state.orgs.loading = true
+  },
+
+  get_stargazers_success (state, data) {
+    state.stargazers = data
+  },
+
+  get_repo_success (state, data) {
+    state.repo = data
   }
 }
 
@@ -192,6 +239,17 @@ const getters = {
 
   members (state) {
     return state.members
+  },
+
+  repoDetails (state) {
+    return {
+      repo: state.repo,
+      stargazers: state.stargazers
+    }
+  },
+
+  orgSearchInvalid (state) {
+    return state.orgSearchInvalid
   }
 }
 
