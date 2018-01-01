@@ -10,18 +10,44 @@ export default new Router({
   routes: [
     {
       path: '/',
-      name: 'Dashboard',
-      component: Dashboard
+      name: 'Home',
+      component: {template: `<span></span>`}
     },
     {
-      path: '/:repo_name',
+      path: '/dashboard',
+      name: 'Dashboard',
+      component: Dashboard,
+      beforeEnter: (to, from, next) => {
+        if (!window.localStorage.getItem('accessToken')) {
+          next('/')
+        } else {
+          next()
+        }
+      }
+    },
+    {
+      path: '/dashboard/:repo_name',
       name: 'DashboardWithRepo',
-      component: Dashboard
+      component: Dashboard,
+      beforeEnter: (to, from, next) => {
+        if (!window.localStorage.getItem('accessToken')) {
+          next('/')
+        } else {
+          next()
+        }
+      }
     },
     {
       path: '/repo-details/:owner_name/:repo_name',
       name: 'RepoDetails',
-      component: RepoDetails
+      component: RepoDetails,
+      beforeEnter: (to, from, next) => {
+        if (!window.localStorage.getItem('accessToken')) {
+          next('/')
+        } else {
+          next()
+        }
+      }
     }
   ]
 })

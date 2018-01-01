@@ -10,7 +10,7 @@
           </div>
         </div>
         <div class="col-md-2">
-          <button type="button" @click="validateToken(token)" :disabled="token == null || token.length === 0"
+          <button type="button" @click="validateTokenInternal(token)" :disabled="token == null || token.length === 0"
                   class="btn btn-primary">Authenticate
           </button>
         </div>
@@ -55,9 +55,16 @@
         'logOut'
       ]),
 
+      validateTokenInternal (token) {
+        this.validateToken(token).then(() => {
+          this.$router.push('/dashboard')
+        })
+      },
+
       clearTokenAndLogOut () {
         this.token = null
         this.logOut()
+        this.$router.push('/')
       }
     }
   }
